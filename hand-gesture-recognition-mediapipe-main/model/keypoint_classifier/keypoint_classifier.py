@@ -2,12 +2,14 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import tensorflow as tf
+import os
 
+project_root = os.path.dirname(os.path.abspath(__file__))
 
 class KeyPointClassifier(object):
     def __init__(
         self,
-        model_path='/Users/saurabh/Documents/Courses/SOEN 6751/SOEN-6751-Project/SOEN-6751-Project/hand-gesture-recognition-mediapipe-main/model/keypoint_classifier/keypoint_classifier.tflite',
+        model_path=os.path.join(project_root, "keypoint_classifier.tflite"),
         num_threads=1,
     ):
         self.interpreter = tf.lite.Interpreter(model_path=model_path,
