@@ -727,18 +727,21 @@ def main():
     image_path = os.path.join(project_root, "smooth-stucco-wall.jpg")
 
     def resize_background(event):
-        # Open the image file (this line can be moved to the global scope if the image doesn't change)
-        image = Image.open(image_path)
-        # Resize the image to the new window size
-        resized_image = image.resize((event.width, event.height), Image.Resampling.LANCZOS)
-        # Update the background image
-        background_photo = ImageTk.PhotoImage(resized_image)
-        background_label.config(image=background_photo)
-        background_label.image = background_photo  
+        # Check if the widget still exists
+        if not background_label.winfo_exists():
+            return  # Exit the function if the widget does not exist
 
-    # Initialize Tkinter root
-    root = tk.Tk()
-    root.title("Gesture Spotify Application")
+        try:
+            # Open the image file
+            image = Image.open(image_path)
+            # Resize the image to the new window size
+            resized_image = image.resize((event.width, event.height), Image.Resampling.LANCZOS)
+            # Update the background image
+            background_photo = ImageTk.PhotoImage(resized_image)
+            background_label.config(image=background_photo)
+            background_label.image = background_photo
+        except _tkinter.TclError as e:
+            print(f"Tkinter error occurred: {e}")
     
 
     # Initial setup for the background image (using a placeholder size)
