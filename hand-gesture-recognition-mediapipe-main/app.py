@@ -58,7 +58,7 @@ def video_stream(label, cap, stop_event,root):
     args = get_args()
     last_volume_change_time = 0  # Keep track of the last time the volume was changed
     
-    VOLUME_CHANGE_INTERVAL = 0.5
+    VOLUME_CHANGE_INTERVAL = 0.2
     
     countdown_start_time = None
 
@@ -90,11 +90,11 @@ def video_stream(label, cap, stop_event,root):
         if current_time - last_track_change > TRACK_CHANGE_TIME:
             if direction == "increase":
                 print(f"Next Track- {direction}")
-                # play_next_track()
+                play_next_track()
                 last_track_change = current_time
             elif direction == "decrease":
                 print(f"Previous Track- {direction}")
-                # play_previous_track()
+                play_previous_track()
                 last_track_change = current_time
 
         # if direction == "increase":
@@ -267,11 +267,11 @@ def video_stream(label, cap, stop_event,root):
 
     # Function to increase Volume
     def increase_volume():
-        subprocess.run(["osascript", "-e", "set volume output volume (output volume of (get volume settings) + 5)"])
+        subprocess.run(["osascript", "-e", "set volume output volume (output volume of (get volume settings) + 10)"])
 
     # Function to decrease Volume
     def decrease_volume():
-        subprocess.run(["osascript", "-e", "set volume output volume (output volume of (get volume settings) - 5)"])
+        subprocess.run(["osascript", "-e", "set volume output volume (output volume of (get volume settings) - 10)"])
 
     # Function to play music in Spotify
     def play_spotify():
