@@ -740,7 +740,7 @@ def main():
             background_photo = ImageTk.PhotoImage(resized_image)
             background_label.config(image=background_photo)
             background_label.image = background_photo
-        except _tkinter.TclError as e:
+        except Exception as e:
             print(f"Tkinter error occurred: {e}")
     
 
