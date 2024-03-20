@@ -302,6 +302,8 @@ def video_stream(label, cap, stop_event,root):
     # Function to close Spotify
     def close_spotify():
         subprocess.run(["osascript", "-e", "tell application \"Spotify\" to quit"])
+    
+    
 
 
     def calculate_crop_size(frame_center, face_center, face_size, initial_crop_size, max_face_size, frame):
@@ -612,6 +614,9 @@ def main():
     cap.set(cv.CAP_PROP_FRAME_WIDTH, cap_width)
     cap.set(cv.CAP_PROP_FRAME_HEIGHT, cap_height)
     stop_event = threading.Event()
+    
+    def start_spotify():
+        subprocess.run(["open", "-a", "Spotify"])
 
     def start_camera():
         global video_thread  # Make the video thread accessible globally so it can be stopped later
@@ -622,7 +627,7 @@ def main():
 
         # Add the Stop button at the top, before the video frame
         stop_button.pack(side=tk.TOP, before=video_frame)
-
+        start_spotify()
         # Start video streaming in a separate thread
         video_thread = threading.Thread(target=video_stream, args=(video_frame, cap, stop_event,root))
         video_thread.start()
