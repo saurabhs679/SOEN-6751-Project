@@ -17,6 +17,7 @@ from model import PointHistoryClassifier
 import time
 import math
 import numpy as np
+import subprocess
 
 desired_width = 1400  # Set the desired width
 desired_height = 900  # Set the desired height
@@ -83,7 +84,10 @@ def main():
         # Implement this function based on your OS
         # direction can be "increase" or "decrease"
         print(f"Volume {direction}")
-
+        # if direction == "increase":
+        #     increase_volume()
+        # elif direction == "decrease":
+        #     decrease_volume()
     def detect_circular_motion(point_history):
         """
         Detects if the motion in point_history is circular and its direction.
@@ -116,6 +120,10 @@ def main():
         # Placeholder for media control logic
         # Implement this function based on the desired media control, e.g., using keyboard shortcuts or API calls
         print(f"Media control action: {action}")
+        if action == "forward":
+            play_next_track()
+        elif action == "reverse":
+            play_previous_track()
         
     def detect_gesture(point_history):
         """
@@ -244,6 +252,53 @@ def main():
 
     #     return crop_size, crop_size
 
+    # Function to increase Volume
+    def increase_volume():
+        subprocess.run(["osascript", "-e", "set volume output volume (output volume of (get volume settings) + 5)"])
+
+    # Function to decrease Volume
+    def decrease_volume():
+        subprocess.run(["osascript", "-e", "set volume output volume (output volume of (get volume settings) - 5)"])
+
+    # Function to play music in Spotify
+    def play_spotify():
+        subprocess.run(["osascript", "-e", "tell application \"Spotify\" to play"])
+
+    # Function to pause music in Spotify
+    def pause_spotify():
+        subprocess.run(["osascript", "-e", "tell application \"Spotify\" to pause"])
+
+    # Function play next track in Spotify
+    def play_next_track():
+        subprocess.run(["osascript", "-e", 'tell application "Spotify" to next track'])
+
+    # Function to play previous track in Spotify
+    def play_previous_track():
+        subprocess.run(["osascript", "-e", 'tell application "Spotify" to previous track'])
+
+    DEBOUNCE_TIME = 2
+
+    # Variables to store the last time the actions were executed
+    last_next_track_time = 0
+    last_previous_track_time = 0
+
+    def handle_pointing_up():
+        global last_next_track_time
+        current_time = time.time()
+        # Check if enough time has passed since the last action
+        if current_time - last_next_track_time >= DEBOUNCE_TIME:
+            play_next_track()  # Execute the action
+            last_next_track_time = current_time  # Update the last action time
+
+    # Function to handle closed fist gesture
+    def handle_closed_fist():
+        global last_previous_track_time
+        current_time = time.time()
+        # Check if enough time has passed since the last action
+        if current_time - last_previous_track_time >= DEBOUNCE_TIME:
+            play_previous_track()  # Execute the action
+            last_previous_track_time = current_time  # Update the last action time
+
     def calculate_crop_size(frame_center, face_center, face_size, initial_crop_size, max_face_size, frame):
         distance = np.linalg.norm(np.array(frame_center) - np.array(face_center))
         crop_size = int(max(initial_crop_size, min(frame.shape[0], frame.shape[1]) - distance))
@@ -274,14 +329,14 @@ def main():
     point_history_classifier = PointHistoryClassifier()
 
     # Read labels ###########################################################
-    with open('C:/Users/rohan/Downloads/hand-gesture-recognition-mediapipe-main/hand-gesture-recognition-mediapipe-main/model/keypoint_classifier/keypoint_classifier_label.csv',
+    with open('/Users/saurabh/Documents/Courses/SOEN 6751/SOEN-6751-Project/SOEN-6751-Project/hand-gesture-recognition-mediapipe-main/model/keypoint_classifier/keypoint_classifier_label.csv',
               encoding='utf-8-sig') as f:
         keypoint_classifier_labels = csv.reader(f)
         keypoint_classifier_labels = [
             row[0] for row in keypoint_classifier_labels
         ]
     with open(
-            'C:/Users/rohan/Downloads/hand-gesture-recognition-mediapipe-main/hand-gesture-recognition-mediapipe-main/model/point_history_classifier/point_history_classifier_label.csv',
+            '/Users/saurabh/Documents/Courses/SOEN 6751/SOEN-6751-Project/SOEN-6751-Project/hand-gesture-recognition-mediapipe-main/model/keypoint_classifier/keypoint_classifier_label.csv',
             encoding='utf-8-sig') as f:
         point_history_classifier_labels = csv.reader(f)
         point_history_classifier_labels = [
@@ -390,7 +445,7 @@ def main():
                                     adjust_system_volume("increase")
                                 elif specific_gesture == "anticlockwise":
                                     adjust_system_volume("decrease")
-                            
+
                             elif gesture_type == "swipe":
                                 if specific_gesture == "left_to_right":
                                     media_control("forward")
@@ -401,12 +456,15 @@ def main():
                             
                         if hand_sign_id == 4:
                             print("Increasing volume")
+                            increase_volume()
                             countdown_start_time = None
                         elif hand_sign_id == 5:
                             print("Forwarding")
+                            play_next_track()
                             countdown_start_time = None
                         elif hand_sign_id == 6:
                             print("Reversing")
+                            play_previous_track()
                             countdown_start_time = None
                         elif hand_sign_id == 1:
                             if countdown_start_time is None:
@@ -415,7 +473,7 @@ def main():
                             else:
                                 # Countdown is already active, calculate elapsed time
                                 elapsed_time = time.time() - countdown_start_time
-                                remaining_time = 4 - elapsed_time
+                                remaining_time = 3 - elapsed_time
                                 # if remaining_time > 0:
                                 #     # Display the countdown on the image
                                 #     text_position = (x, y + h + 10)  # Adjust 30 as needed for spacing
@@ -437,6 +495,7 @@ def main():
                                 else:
                                     # Countdown completed
                                     print("Paused")
+                                    pause_spotify()
                                     # Reset the countdown start time
                                     countdown_start_time = None
                         else:
@@ -581,12 +640,12 @@ def logging_csv(number, mode, landmark_list, point_history_list):
     if mode == 0:
         pass
     if mode == 1 and (0 <= number <= 9):
-        csv_path = 'C:/Users/rohan/Downloads/hand-gesture-recognition-mediapipe-main/hand-gesture-recognition-mediapipe-main/model/keypoint_classifier/keypoint.csv'
+        csv_path = '/Users/saurabh/Documents/Courses/SOEN 6751/SOEN-6751-Project/SOEN-6751-Project/hand-gesture-recognition-mediapipe-main/model/keypoint_classifier/keypoint.csv'
         with open(csv_path, 'a', newline="") as f:
             writer = csv.writer(f)
             writer.writerow([number, *landmark_list])
     if mode == 2 and (0 <= number <= 9):
-        csv_path = 'C:/Users/rohan/Downloads/hand-gesture-recognition-mediapipe-main/hand-gesture-recognition-mediapipe-main/model/point_history_classifier/point_history.csv'
+        csv_path = '/Users/saurabh/Documents/Courses/SOEN 6751/SOEN-6751-Project/SOEN-6751-Project/hand-gesture-recognition-mediapipe-main/model/point_history_classifier/point_history.csv'
         with open(csv_path, 'a', newline="") as f:
             writer = csv.writer(f)
             writer.writerow([number, *point_history_list])

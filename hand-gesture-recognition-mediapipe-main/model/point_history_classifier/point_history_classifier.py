@@ -7,7 +7,7 @@ import tensorflow as tf
 class PointHistoryClassifier(object):
     def __init__(
         self,
-        model_path='C:/Users/rohan/Downloads/hand-gesture-recognition-mediapipe-main/hand-gesture-recognition-mediapipe-main/model/point_history_classifier/point_history_classifier.tflite',
+        model_path='/Users/saurabh/Documents/Courses/SOEN 6751/SOEN-6751-Project/SOEN-6751-Project/hand-gesture-recognition-mediapipe-main/model/point_history_classifier/point_history_classifier.tflite',
         score_th=0.5,
         invalid_value=0,
         num_threads=1,
