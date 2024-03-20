@@ -25,6 +25,7 @@ from tkinter import messagebox
 import threading
 from PIL import Image, ImageTk
 
+
 desired_width = 1200  # Set the desired width
 desired_height = 600  # Set the desired height
 max_face_size = 300
@@ -759,11 +760,11 @@ def main():
     welcome_label = tk.Label(root, text="Welcome to Gesture Spotify Control Application", font=("Helvetica", 16))
     welcome_label.pack()
     # Hint button on the main window, placed at the bottom right corner
-    hint_button = tk.Button(root, text="Hints", command=show_hints, bg="blue", fg="white")
+    hint_button = tk.Button(root, text="Hints", command=show_hints, bg="blue")
     hint_button.place(relx=1.0, rely=1.0, anchor="se")
     # Start and Stop buttons (Define them before the video frame)
-    start_button = tk.Button(root, text="Start Camera", command=start_camera, bg="green", fg="white")
-    stop_button = tk.Button(root, text="Stop Camera", command=stop_camera, bg="red", fg="white")
+    start_button = tk.Button(root, text="Start Camera", command=start_camera, bg="green")
+    stop_button = tk.Button(root, text="Stop Camera", command=stop_camera, bg="red")
 
     # Initially, only pack the Start button and place it at the top
     start_button.pack(side=tk.TOP)
