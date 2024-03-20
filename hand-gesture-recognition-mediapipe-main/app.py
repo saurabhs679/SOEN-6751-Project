@@ -18,11 +18,18 @@ import time
 import math
 import numpy as np
 import subprocess
+import os
+import tkinter as tk
+from tkinter import messagebox
+import threading
+from PIL import Image, ImageTk
 
-desired_width = 1400  # Set the desired width
-desired_height = 900  # Set the desired height
+desired_width = 1200  # Set the desired width
+desired_height = 600  # Set the desired height
 max_face_size = 300
-
+project_root = os.path.dirname(os.path.abspath(__file__))
+TRACK_CHANGE_TIME = 0.5
+last_track_change = 0
 
 
 def get_args():
@@ -46,14 +53,13 @@ def get_args():
 
     return args
 
-
-def main():
+def video_stream(label, cap, stop_event,root):
     # Argument parsing #################################################################
     args = get_args()
-
-    cap_device = args.device
-    cap_width = args.width
-    cap_height = args.height
+    last_volume_change_time = 0  # Keep track of the last time the volume was changed
+    
+    VOLUME_CHANGE_INTERVAL = 0.5
+    
     countdown_start_time = None
 
     use_static_image_mode = args.use_static_image_mode
@@ -63,9 +69,6 @@ def main():
     use_brect = True
 
     # Camera preparation ###############################################################
-    cap = cv.VideoCapture(0)
-    cap.set(cv.CAP_PROP_FRAME_WIDTH, cap_width)
-    cap.set(cv.CAP_PROP_FRAME_HEIGHT, cap_height)
 
     # Initialize MediaPipe Face Detection
     mp_face_detection = mp.solutions.face_detection
@@ -83,11 +86,21 @@ def main():
         # Placeholder for system volume adjustment logic
         # Implement this function based on your OS
         # direction can be "increase" or "decrease"
-        print(f"Volume {direction}")
+        global last_track_change , TRACK_CHANGE_TIME
+        if current_time - last_track_change > TRACK_CHANGE_TIME:
+            if direction == "increase":
+                print(f"Next Track- {direction}")
+                # play_next_track()
+                last_track_change = current_time
+            elif direction == "decrease":
+                print(f"Previous Track- {direction}")
+                # play_previous_track()
+                last_track_change = current_time
+
         # if direction == "increase":
-        #     increase_volume()
+        #     play_next_track()
         # elif direction == "decrease":
-        #     decrease_volume()
+        #     play_previous_track()
     def detect_circular_motion(point_history):
         """
         Detects if the motion in point_history is circular and its direction.
@@ -120,10 +133,10 @@ def main():
         # Placeholder for media control logic
         # Implement this function based on the desired media control, e.g., using keyboard shortcuts or API calls
         print(f"Media control action: {action}")
-        if action == "forward":
-            play_next_track()
-        elif action == "reverse":
-            play_previous_track()
+        # if action == "forward":
+        #     play_next_track()
+        # elif action == "reverse":
+        #     play_previous_track()
         
     def detect_gesture(point_history):
         """
@@ -276,28 +289,20 @@ def main():
     def play_previous_track():
         subprocess.run(["osascript", "-e", 'tell application "Spotify" to previous track'])
 
-    DEBOUNCE_TIME = 2
+        # Function to check if music is playing in Spotify
+    def is_spotify_playing():
+        result = subprocess.run(["osascript", "-e", "tell application \"Spotify\" to player state as string"], capture_output=True, text=True)
+        return result.stdout.strip() == "playing"
 
-    # Variables to store the last time the actions were executed
-    last_next_track_time = 0
-    last_previous_track_time = 0
+    # Function to check if music is paused in Spotify
+    def is_spotify_paused():
+        result = subprocess.run(["osascript", "-e", "tell application \"Spotify\" to player state as string"], capture_output=True, text=True)
+        return result.stdout.strip() == "paused"
+    
+    # Function to close Spotify
+    def close_spotify():
+        subprocess.run(["osascript", "-e", "tell application \"Spotify\" to quit"])
 
-    def handle_pointing_up():
-        global last_next_track_time
-        current_time = time.time()
-        # Check if enough time has passed since the last action
-        if current_time - last_next_track_time >= DEBOUNCE_TIME:
-            play_next_track()  # Execute the action
-            last_next_track_time = current_time  # Update the last action time
-
-    # Function to handle closed fist gesture
-    def handle_closed_fist():
-        global last_previous_track_time
-        current_time = time.time()
-        # Check if enough time has passed since the last action
-        if current_time - last_previous_track_time >= DEBOUNCE_TIME:
-            play_previous_track()  # Execute the action
-            last_previous_track_time = current_time  # Update the last action time
 
     def calculate_crop_size(frame_center, face_center, face_size, initial_crop_size, max_face_size, frame):
         distance = np.linalg.norm(np.array(frame_center) - np.array(face_center))
@@ -329,14 +334,13 @@ def main():
     point_history_classifier = PointHistoryClassifier()
 
     # Read labels ###########################################################
-    with open('/Users/saurabh/Documents/Courses/SOEN 6751/SOEN-6751-Project/SOEN-6751-Project/hand-gesture-recognition-mediapipe-main/model/keypoint_classifier/keypoint_classifier_label.csv',
+    with open(os.path.join(project_root, "model/keypoint_classifier/keypoint_classifier_label.csv"),
               encoding='utf-8-sig') as f:
         keypoint_classifier_labels = csv.reader(f)
         keypoint_classifier_labels = [
             row[0] for row in keypoint_classifier_labels
         ]
-    with open(
-            '/Users/saurabh/Documents/Courses/SOEN 6751/SOEN-6751-Project/SOEN-6751-Project/hand-gesture-recognition-mediapipe-main/model/keypoint_classifier/keypoint_classifier_label.csv',
+    with open(os.path.join(project_root, "model/keypoint_classifier/keypoint_classifier_label.csv"),
             encoding='utf-8-sig') as f:
         point_history_classifier_labels = csv.reader(f)
         point_history_classifier_labels = [
@@ -355,8 +359,9 @@ def main():
 
     #  ########################################################################
     mode = 0
-
-    while True:
+    
+                
+    while not stop_event.is_set():
         fps = cvFpsCalc.get()
 
         # Process Key (ESC: end) #################################################
@@ -443,29 +448,63 @@ def main():
                             if gesture_type == "circular":
                                 if specific_gesture == "clockwise":
                                     adjust_system_volume("increase")
+                                    countdown_start_time = None
                                 elif specific_gesture == "anticlockwise":
                                     adjust_system_volume("decrease")
+                                    countdown_start_time = None
 
-                            elif gesture_type == "swipe":
-                                if specific_gesture == "left_to_right":
-                                    media_control("forward")
-                                elif specific_gesture == "right_to_left":
-                                    media_control("reverse")
+                            # elif gesture_type == "swipe":
+                            #     if specific_gesture == "left_to_right":
+                            #         media_control("forward")
+                            #     elif specific_gesture == "right_to_left":
+                            #         media_control("reverse")
 
                         ########### Media control #############
-                            
+                        current_time = time.time()
+                        
                         if hand_sign_id == 4:
-                            print("Increasing volume")
-                            increase_volume()
-                            countdown_start_time = None
+                            if current_time - last_volume_change_time > VOLUME_CHANGE_INTERVAL:
+                                print("Increasing volume")
+                                increase_volume()
+                                last_volume_change_time = current_time
+                                countdown_start_time = None
+                        elif hand_sign_id == 7:
+                            if current_time - last_volume_change_time > VOLUME_CHANGE_INTERVAL:
+                                print("Decreasing volume")
+                                decrease_volume()
+                                last_volume_change_time = current_time
+                                countdown_start_time = None
                         elif hand_sign_id == 5:
-                            print("Forwarding")
+                            print("Next Track")
                             play_next_track()
                             countdown_start_time = None
                         elif hand_sign_id == 6:
-                            print("Reversing")
+                            print("Previous Track")
                             play_previous_track()
                             countdown_start_time = None
+                        elif hand_sign_id == 3:
+                            if countdown_start_time is None:
+                                countdown_start_time = time.time()
+                            else:
+                                elapsed_time = time.time() - countdown_start_time
+                                remaining_time = 3 - elapsed_time
+
+                                if remaining_time > 0:
+                                    text_position = (x, y + h + 20)  # Adjust 20 as needed for spacing, increase if needed
+
+                                    if text_position[1] + 20 > debug_image.shape[0]:  # Assuming 20 pixels is the approximate height of the text
+                                        text_position = (x, y - 20)
+
+                                    cv.putText(debug_image, f"Quiting in {int(remaining_time)}", text_position,
+                                            cv.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2, cv.LINE_AA)
+                                    print(f"Quiting in {int(remaining_time)}...")
+                                else:
+                                    print("Quit")
+                                    close_spotify()
+                                    cap.release()
+                                    root.destroy()
+                                    countdown_start_time = None
+                            
                         elif hand_sign_id == 1:
                             if countdown_start_time is None:
                                 # Start the countdown
@@ -491,11 +530,17 @@ def main():
 
                                     cv.putText(debug_image, f"{int(remaining_time)}...", text_position,
                                             cv.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2, cv.LINE_AA)
-                                    print(f"Playing/Pausing in {int(remaining_time)}...")
+                                    print(f"Playing/Pausing in {int(remaining_time)}")
                                 else:
                                     # Countdown completed
-                                    print("Paused")
-                                    pause_spotify()
+                                    if is_spotify_playing():
+                                        print("Spotify is currently playing")
+                                        pause_spotify()
+                                        print("Pause")
+                                    elif is_spotify_paused():
+                                        print("Spotify is currently paused")
+                                        play_spotify()
+                                        print("Play")
                                     # Reset the countdown start time
                                     countdown_start_time = None
                         else:
@@ -533,10 +578,148 @@ def main():
 
                 # Screen reflection #############################################################
                 resized_frame = cv.resize(cropped_frame, (desired_width, desired_height), interpolation=cv.INTER_LINEAR)
-                cv.imshow('Hand Gesture Recognition', resized_frame)
+                # cv.imshow('Hand Gesture Recognition', resized_frame)
+                debug_image = cv.cvtColor(resized_frame, cv.COLOR_BGR2RGB)  # Convert to RGB
+                debug_image = Image.fromarray(debug_image)
+                debug_image = ImageTk.PhotoImage(image=debug_image)
 
-    cap.release()
-    cv.destroyAllWindows()
+                # Display the debug_image on the Tkinter label
+                label.config(image=debug_image)
+                label.image = debug_image
+
+                time.sleep(0.02)
+        # ret, frame = cap.read()
+        # if ret:
+        #     frame = cv.flip(frame, 1)  # Mirror the frame
+        #     frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)  # Convert to RGB
+        #     frame = Image.fromarray(frame)
+        #     frame = ImageTk.PhotoImage(image=frame)
+        #     label.config(image=frame)
+        #     label.image = frame
+        # time.sleep(0.02)  # Sleep briefly to avoid high CPU usage
+
+
+
+def main():
+
+    args = get_args()
+
+    cap_width = args.width
+    cap_height = args.height
+
+    # Camera preparation ###############################################################
+    cap = cv.VideoCapture(0)
+    cap.set(cv.CAP_PROP_FRAME_WIDTH, cap_width)
+    cap.set(cv.CAP_PROP_FRAME_HEIGHT, cap_height)
+    stop_event = threading.Event()
+
+    def start_camera():
+        global video_thread  # Make the video thread accessible globally so it can be stopped later
+        stop_event.clear()  # Reset the stop_event before starting a new thread
+
+        # Remove the Start button from the layout
+        start_button.pack_forget()
+
+        # Add the Stop button at the top, before the video frame
+        stop_button.pack(side=tk.TOP, before=video_frame)
+
+        # Start video streaming in a separate thread
+        video_thread = threading.Thread(target=video_stream, args=(video_frame, cap, stop_event,root))
+        video_thread.start()
+
+
+    # def stop_camera():
+    #     stop_event.set()  # Signal the video stream thread to stop
+    #     video_thread.join()  # Wait for the video stream thread to terminate
+
+    #     # Release the camera resource properly
+    #     cap.release()
+
+    #     # Re-initialize the camera for the next start
+    #     cap_width = args.width
+    #     cap_height = args.height
+    #     cap = cv.VideoCapture(0)
+    #     cap.set(cv.CAP_PROP_FRAME_WIDTH, cap_width)
+    #     cap.set(cv.CAP_PROP_FRAME_HEIGHT, cap_height)
+
+    #     # Stop button cleanup and re-display the Start button
+    #     stop_button.pack_forget()  # Remove the Stop button from the layout
+    #     start_button.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=tk.YES)
+    def stop_camera():
+        # stop_event.set()  # Signal the video stream thread to stop
+        # video_thread.join()  # Wait for the video stream thread to terminate
+
+        # Release the camera resource properly
+        cap.release()
+
+        # Close the application window
+        root.destroy()
+
+    def show_hints():
+        # Create a top-level window for hints
+        hint_window = tk.Toplevel(root)
+        hint_window.title("How to Use")
+
+        # Add your hints or instructions here
+        hints_text = """
+        Instructions for using the application:
+        - Start the camera by clicking the 'Start Camera' button.
+        - Perform gestures in front of the camera to control the application.
+        - Click the 'Stop Camera' button to stop the camera.
+        - For more detailed instructions, refer to the user manual.
+        """
+        tk.Label(hint_window, text=hints_text, justify=tk.LEFT, padx=10, pady=10).pack()
+
+        # You can also add a button to close the hints window
+        close_button = tk.Button(hint_window, text="Close", command=hint_window.destroy)
+        close_button.pack(pady=5)
+
+    image_path = os.path.join(project_root, "tech_inspired_background.jpg")
+
+    def resize_background(event):
+        # Open the image file (this line can be moved to the global scope if the image doesn't change)
+        image = Image.open(image_path)
+        # Resize the image to the new window size
+        resized_image = image.resize((event.width, event.height), Image.Resampling.LANCZOS)
+        # Update the background image
+        background_photo = ImageTk.PhotoImage(resized_image)
+        background_label.config(image=background_photo)
+        background_label.image = background_photo  
+
+    # Initialize Tkinter root
+    root = tk.Tk()
+    root.title("Gesture Media Control Application")
+    
+
+    # Initial setup for the background image (using a placeholder size)
+    background_image = Image.open(image_path)  # Update with your image path
+    background_photo = ImageTk.PhotoImage(background_image.resize((800, 600), Image.Resampling.LANCZOS))  # Placeholder size and updated to use Image.Resampling.LANCZOS
+    background_label = tk.Label(root, image=background_photo)
+    background_label.place(x=0, y=0, relwidth=1, relheight=1)
+
+    # Bind the resize event to the resize_background function
+    root.bind('<Configure>', resize_background)
+    # Welcome label (You can also place this at the top, above the button if preferred)
+    welcome_label = tk.Label(root, text="Welcome to Gesture Media Control Application", font=("Helvetica", 16))
+    welcome_label.pack()
+    # Hint button on the main window, placed at the bottom right corner
+    hint_button = tk.Button(root, text="Hints", command=show_hints, bg="blue", fg="white")
+    hint_button.place(relx=1.0, rely=1.0, anchor="se")
+    # Start and Stop buttons (Define them before the video frame)
+    start_button = tk.Button(root, text="Start Camera", command=start_camera, bg="green", fg="white")
+    stop_button = tk.Button(root, text="Stop Camera", command=stop_camera, bg="red", fg="white")
+
+    # Initially, only pack the Start button and place it at the top
+    start_button.pack(side=tk.TOP)
+
+    # Frame for video feed (Now, this comes after the button)
+    video_frame = tk.Label(root)
+    video_frame.pack()
+
+    
+
+    # Start the Tkinter mainloop
+    root.mainloop()
 
 
 def select_mode(key, mode):
