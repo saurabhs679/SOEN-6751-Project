@@ -732,9 +732,12 @@ def main():
         # Resize the image to the new window size
         resized_image = image.resize((event.width, event.height), Image.Resampling.LANCZOS)
         # Update the background image
-        background_photo = ImageTk.PhotoImage(resized_image)
-        background_label.config(image=background_photo)
-        background_label.image = background_photo  
+        try:
+            background_photo = ImageTk.PhotoImage(resized_image)
+            background_label.config(image=background_photo)
+            background_label.image = background_photo  
+        except Exception as e:
+            print(e)
 
     # Initialize Tkinter root
     root = tk.Tk()
