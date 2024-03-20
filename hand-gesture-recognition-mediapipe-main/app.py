@@ -328,7 +328,8 @@ def video_stream(label, cap, stop_event,root):
 
         # Safely close the Tkinter GUI window
         try:
-            root.destroy()
+            root.quit()  # For gracefully quitting the Tkinter mainloop
+            root.destroy() 
         except Exception as e:
             print(f"Error closing GUI window: {e}")
 
@@ -738,6 +739,8 @@ def main():
             background_label.image = background_photo  
         except Exception as e:
             print(e)
+            root.quit()
+            root.destroy()
 
     # Initialize Tkinter root
     root = tk.Tk()
