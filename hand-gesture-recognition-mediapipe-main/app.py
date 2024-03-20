@@ -605,17 +605,20 @@ def video_stream(label, cap, stop_event,root):
                 debug_image = draw_point_history(debug_image,point_history)
                 debug_image = draw_info(debug_image, fps, mode, number)
 
-                # Screen reflection #############################################################
-                resized_frame = cv.resize(cropped_frame, (desired_width, desired_height), interpolation=cv.INTER_LINEAR)
-                # cv.imshow('Hand Gesture Recognition', resized_frame)
-                debug_image = cv.cvtColor(resized_frame, cv.COLOR_BGR2RGB)  # Convert to RGB
-                debug_image = Image.fromarray(debug_image)
-                debug_image = ImageTk.PhotoImage(image=debug_image)
+                try:
+                    # Screen reflection #############################################################
+                    resized_frame = cv.resize(cropped_frame, (desired_width, desired_height), interpolation=cv.INTER_LINEAR)
+                    # cv.imshow('Hand Gesture Recognition', resized_frame)
+                    debug_image = cv.cvtColor(resized_frame, cv.COLOR_BGR2RGB)  # Convert to RGB
+                    debug_image = Image.fromarray(debug_image)
+                    debug_image = ImageTk.PhotoImage(image=debug_image)
 
-                # Display the debug_image on the Tkinter label
-                label.config(image=debug_image)
-                label.image = debug_image
-
+                    # Display the debug_image on the Tkinter label
+                    label.config(image=debug_image)
+                    label.image = debug_image
+                except Exception as e:
+                    print("Error while displaying image")
+                    continue
                 time.sleep(0.02)
         # ret, frame = cap.read()
         # if ret:
