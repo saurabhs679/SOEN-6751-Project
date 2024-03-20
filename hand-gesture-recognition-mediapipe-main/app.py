@@ -6,6 +6,7 @@ import argparse
 import itertools
 from collections import Counter
 from collections import deque
+from tkinter import PhotoImage
 
 import cv2 as cv
 import numpy as np
@@ -305,6 +306,33 @@ def video_stream(label, cap, stop_event,root):
     
     
 
+    def quit_application():
+        print("Quitting application...")
+
+        # Close Spotify if needed (ensure this function is defined and works correctly)
+        try:
+            close_spotify()
+        except Exception as e:
+            print(f"Error closing Spotify: {e}")
+
+        # Release the camera resource
+        try:
+            if cap.isOpened():
+                cap.release()
+        except Exception as e:
+            print(f"Error releasing camera: {e}")
+
+        # If there are any background threads, make sure they are properly stopped
+        # For example, if you have a stop_event for a video streaming thread:
+        # stop_event.set()
+
+        # Safely close the Tkinter GUI window
+        try:
+            root.destroy()
+        except Exception as e:
+            print(f"Error closing GUI window: {e}")
+
+
 
     def calculate_crop_size(frame_center, face_center, face_size, initial_crop_size, max_face_size, frame):
         distance = np.linalg.norm(np.array(frame_center) - np.array(face_center))
@@ -501,10 +529,7 @@ def video_stream(label, cap, stop_event,root):
                                             cv.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2, cv.LINE_AA)
                                     print(f"Quiting in {int(remaining_time)}...")
                                 else:
-                                    print("Quit")
-                                    close_spotify()
-                                    cap.release()
-                                    root.destroy()
+                                    quit_application()
                                     countdown_start_time = None
                             
                         elif hand_sign_id == 1:
@@ -663,23 +688,43 @@ def main():
     def show_hints():
         # Create a top-level window for hints
         hint_window = tk.Toplevel(root)
-        hint_window.title("How to Use")
+        hint_window.title("Gesture Hints")
 
-        # Add your hints or instructions here
-        hints_text = """
-        Instructions for using the application:
-        - Start the camera by clicking the 'Start Camera' button.
-        - Perform gestures in front of the camera to control the application.
-        - Click the 'Stop Camera' button to stop the camera.
-        - For more detailed instructions, refer to the user manual.
-        """
-        tk.Label(hint_window, text=hints_text, justify=tk.LEFT, padx=10, pady=10).pack()
+        # Define the desired frame size (width, height)
+        frame_width, frame_height = 1000, 700  # Example frame size, adjust as needed
 
-        # You can also add a button to close the hints window
+        # Load the hint image using PIL
+        hint_image_path = os.path.join(project_root, "Beige Professional Practice Guide List For Business Employees Flyer A4.jpg")
+        pil_image = Image.open(hint_image_path)
+
+        # Calculate the aspect ratio of the image
+        img_width, img_height = pil_image.size
+        aspect_ratio = img_width / img_height
+
+        # Calculate new dimensions based on the aspect ratio
+        if img_width > img_height:
+            new_width = frame_width
+            new_height = int(frame_width / aspect_ratio)
+        else:
+            new_height = frame_height
+            new_width = int(frame_height * aspect_ratio)
+
+        # Resize the image to fit within the frame size while maintaining aspect ratio
+        pil_image_resized = pil_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+
+        # Convert the PIL image object to a Tkinter-compatible PhotoImage object
+        hint_image = ImageTk.PhotoImage(pil_image_resized)
+
+        # Display the resized hint image
+        hint_label = tk.Label(hint_window, image=hint_image)
+        hint_label.image = hint_image  # Keep a reference to avoid garbage collection
+        hint_label.pack(padx=10, pady=10)
+
+        # Add a button to close the hints window
         close_button = tk.Button(hint_window, text="Close", command=hint_window.destroy)
         close_button.pack(pady=5)
 
-    image_path = os.path.join(project_root, "tech_inspired_background.jpg")
+    image_path = os.path.join(project_root, "smooth-stucco-wall.jpg")
 
     def resize_background(event):
         # Open the image file (this line can be moved to the global scope if the image doesn't change)
@@ -693,7 +738,7 @@ def main():
 
     # Initialize Tkinter root
     root = tk.Tk()
-    root.title("Gesture Media Control Application")
+    root.title("Gesture Spotify Application")
     
 
     # Initial setup for the background image (using a placeholder size)
@@ -705,7 +750,7 @@ def main():
     # Bind the resize event to the resize_background function
     root.bind('<Configure>', resize_background)
     # Welcome label (You can also place this at the top, above the button if preferred)
-    welcome_label = tk.Label(root, text="Welcome to Gesture Media Control Application", font=("Helvetica", 16))
+    welcome_label = tk.Label(root, text="Welcome to Gesture Spotify Control Application", font=("Helvetica", 16))
     welcome_label.pack()
     # Hint button on the main window, placed at the bottom right corner
     hint_button = tk.Button(root, text="Hints", command=show_hints, bg="blue", fg="white")
