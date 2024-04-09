@@ -305,7 +305,9 @@ def video_stream(label, cap, stop_event,root):
     def close_spotify():
         subprocess.run(["osascript", "-e", "tell application \"Spotify\" to quit"])
     
-    
+    def close_application():
+        root.quit()  # Stop the Tkinter event loop
+        root.destroy()
 
     def quit_application():
         print("Quitting application...")
@@ -322,6 +324,8 @@ def video_stream(label, cap, stop_event,root):
                 cap.release()
         except Exception as e:
             print(f"Error releasing camera: {e}")
+        
+        root.after(1000, close_application)
 
         # If there are any background threads, make sure they are properly stopped
         # For example, if you have a stop_event for a video streaming thread:
@@ -680,18 +684,19 @@ def main():
     #     # Stop button cleanup and re-display the Start button
     #     stop_button.pack_forget()  # Remove the Stop button from the layout
     #     start_button.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=tk.YES)
-    def stop_camera():
-        # stop_event.set()  # Signal the video stream thread to stop
-        # video_thread.join()  # Wait for the video stream thread to terminate
-        # Release the camera resource properly
-        try:
-            subprocess.run(["osascript", "-e", "tell application \"Spotify\" to quit"])
-            cap.release()
+    def close_application():
+        root.quit()  # Stop the Tkinter event loop
+        root.destroy()  # Close the window
 
-            # Close the application window
-            root.destroy()
-        except Exception as e:
-            print(e)
+    def stop_camera():
+        
+        if cap.isOpened():
+            cap.release()
+        
+        subprocess.run(["osascript", "-e", "tell application \"Spotify\" to quit"])
+
+        root.after(1000, close_application)
+
 
     def show_hints():
         # Create a top-level window for hints
@@ -769,8 +774,8 @@ def main():
     hint_button = tk.Button(root, text="Hints", command=show_hints, bg="blue")
     hint_button.place(relx=1.0, rely=1.0, anchor="se")
     # Start and Stop buttons (Define them before the video frame)
-    start_button = tk.Button(root, text="Start Camera", command=start_camera, bg="green")
-    stop_button = tk.Button(root, text="Stop Camera", command=stop_camera, bg="red")
+    start_button = tk.Button(root, text="Start Gesture Detection", command=start_camera, bg="green")
+    stop_button = tk.Button(root, text="Stop Gesture Detection", command=stop_camera, bg="red")
 
     # Initially, only pack the Start button and place it at the top
     start_button.pack(side=tk.TOP)
