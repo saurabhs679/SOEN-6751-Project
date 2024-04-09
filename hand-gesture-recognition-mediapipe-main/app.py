@@ -602,7 +602,7 @@ def video_stream(label, cap, stop_event,root):
                 else:
                     point_history.append([0, 0])
 
-                debug_image = draw_point_history(debug_image,point_history)
+                # debug_image = draw_point_history(debug_image,point_history)
                 debug_image = draw_info(debug_image, fps, mode, number)
 
                 try:
@@ -683,12 +683,15 @@ def main():
     def stop_camera():
         # stop_event.set()  # Signal the video stream thread to stop
         # video_thread.join()  # Wait for the video stream thread to terminate
-
         # Release the camera resource properly
-        cap.release()
+        try:
+            subprocess.run(["osascript", "-e", "tell application \"Spotify\" to quit"])
+            cap.release()
 
-        # Close the application window
-        root.destroy()
+            # Close the application window
+            root.destroy()
+        except Exception as e:
+            print(e)
 
     def show_hints():
         # Create a top-level window for hints
@@ -883,12 +886,14 @@ def logging_csv(number, mode, landmark_list, point_history_list):
     if mode == 0:
         pass
     if mode == 1 and (0 <= number <= 9):
-        csv_path = '/Users/saurabh/Documents/Courses/SOEN 6751/SOEN-6751-Project/SOEN-6751-Project/hand-gesture-recognition-mediapipe-main/model/keypoint_classifier/keypoint.csv'
+        # csv_path = '/Users/saurabh/Documents/Courses/SOEN 6751/SOEN-6751-Project/SOEN-6751-Project/hand-gesture-recognition-mediapipe-main/model/keypoint_classifier/keypoint.csv'
+        csv_path = os.path.join(project_root, "model/keypoint_classifier/keypoint.csv")
         with open(csv_path, 'a', newline="") as f:
             writer = csv.writer(f)
             writer.writerow([number, *landmark_list])
     if mode == 2 and (0 <= number <= 9):
-        csv_path = '/Users/saurabh/Documents/Courses/SOEN 6751/SOEN-6751-Project/SOEN-6751-Project/hand-gesture-recognition-mediapipe-main/model/point_history_classifier/point_history.csv'
+        # csv_path = '/Users/saurabh/Documents/Courses/SOEN 6751/SOEN-6751-Project/SOEN-6751-Project/hand-gesture-recognition-mediapipe-main/model/point_history_classifier/point_history.csv'
+        csv_path = os.path.join(project_root, "model/point_history_classifier/point_history.csv")
         with open(csv_path, 'a', newline="") as f:
             writer = csv.writer(f)
             writer.writerow([number, *point_history_list])
