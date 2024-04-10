@@ -697,6 +697,13 @@ def main():
 
         root.after(1000, close_application)
 
+    def on_close():
+        if cap.isOpened():
+            cap.release()
+        
+        subprocess.run(["osascript", "-e", "tell application \"Spotify\" to quit"])
+
+        root.after(1000, close_application)
 
     def show_hints():
         # Create a top-level window for hints
@@ -757,6 +764,7 @@ def main():
     # Initialize Tkinter root
     root = tk.Tk()
     root.geometry("1200x600")
+    root.protocol("WM_DELETE_WINDOW", on_close)
     root.title("Gesture Spotify Application")
     
 
@@ -769,7 +777,7 @@ def main():
     # Bind the resize event to the resize_background function
     root.bind('<Configure>', resize_background)
     # Welcome label (You can also place this at the top, above the button if preferred)
-    welcome_label = tk.Label(root, text="Welcome to Gesture Spotify Control Application", font=("Helvetica", 16, "bold"), padx=10,
+    welcome_label = tk.Label(root, text="Welcome to Gesture Based Spotify Control Application", font=("Helvetica", 16, "bold"), padx=10,
                          pady=10)
     welcome_label.pack()
     # Hint button on the main window, placed at the bottom right corner
