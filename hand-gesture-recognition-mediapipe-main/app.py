@@ -756,6 +756,7 @@ def main():
 
     # Initialize Tkinter root
     root = tk.Tk()
+    root.geometry("1200x600")
     root.title("Gesture Spotify Application")
     
 
