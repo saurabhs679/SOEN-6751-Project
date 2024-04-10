@@ -768,14 +768,15 @@ def main():
     # Bind the resize event to the resize_background function
     root.bind('<Configure>', resize_background)
     # Welcome label (You can also place this at the top, above the button if preferred)
-    welcome_label = tk.Label(root, text="Welcome to Gesture Spotify Control Application", font=("Helvetica", 16))
+    welcome_label = tk.Label(root, text="Welcome to Gesture Spotify Control Application", font=("Helvetica", 16, "bold"), padx=10,
+                         pady=10)
     welcome_label.pack()
     # Hint button on the main window, placed at the bottom right corner
     hint_button = tk.Button(root, text="Hints", command=show_hints, bg="blue")
     hint_button.place(relx=1.0, rely=1.0, anchor="se")
     # Start and Stop buttons (Define them before the video frame)
-    start_button = tk.Button(root, text="Start Gesture Detection", command=start_camera, bg="green")
-    stop_button = tk.Button(root, text="Stop Gesture Detection", command=stop_camera, bg="red")
+    start_button = tk.Button(root, text="Start Gesture Detection", command=start_camera, fg='green', bg='black', width=20, height=2,font=("Arial", 16, "bold"))
+    stop_button = tk.Button(root, text="Stop Gesture Detection", command=stop_camera, fg='red', bg='black', width=20, height=2,font=("Arial", 16, "bold"))
 
     # Initially, only pack the Start button and place it at the top
     start_button.pack(side=tk.TOP)
